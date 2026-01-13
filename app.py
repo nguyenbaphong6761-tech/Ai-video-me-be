@@ -1,59 +1,82 @@
 import streamlit as st
 from openai import OpenAI
 
-st.set_page_config(page_title="AI Video Mẹ & Bé", layout="centered")
-st.title("🤱 AI Tạo Kịch Bản + Ảnh Video Mẹ & Bé")
+# ================== CẤU HÌNH TRANG ==================
+st.set_page_config(
+    page_title="AI Mẹ & Bé",
+    layout="centered"
+)
 
-api_key = st.text_input("🔑 Nhập OpenAI API Key", type="password")
+st.title("🤱 AI Tạo Kịch Bản & Ảnh Mẹ & Bé")
+st.write("👉 Nhập API key → nhập chủ đề → bấm nút")
 
-if api_key:
-    client = OpenAI(api_key=api_key)
+# ================== NHẬP API KEY ==================
+api_key = st.text_input(
+    "🔑 OpenAI API Key",
+    type="password",
+    placeholder="sk-..."
+)
 
-    topic = st.text_area(
-        "📌 Nhập chủ đề video",
-        "Chăm sóc bé 1–3 tháng tuổi ngủ ngon ban đêm"
-    )
+if not api_key:
+    st.stop()
 
-    if st.button("🚀 Tạo kịch bản & hình ảnh"):
-        with st.spinner("AI đang xử lý..."):
+client = OpenAI(api_key=api_key)
 
-            # 1️⃣ Tạo kịch bản + prompt ảnh
-            script_prompt = f"""
-            Viết:
-            1. Kịch bản video ngắn 30–45s cho chủ đề: {topic}
-            2. Prompt tạo ảnh minh họa cho video (phong cách dễ thương, thực tế)
+# ================== NHẬP CHỦ ĐỀ ==================
+topic = st.text_input(
+    "📌 Chủ đề video",
+    "Chăm sóc bé 1–3 tháng tuổi ngủ ngon ban đêm"
+)
 
-            Trình bày rõ ràng.
-            """
+# ================== NÚT CHẠY ==================
+if st.button("🚀 Tạo kịch bản & hình ảnh"):
 
-            script_res = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "Bạn là chuyên gia nội dung mẹ và bé."},
-                    {"role": "user", "content": script_prompt}
-                ]
-            )
+    with st.spinner("AI đang xử lý, vui lòng chờ..."):
 
-            result_text = script_res.choices[0].message.content
-            st.subheader("📜 KỊCH BẢN & PROMPT")
-            st.markdown(result_text)
+        # ---------- 1. TẠO KỊCH BẢN ----------
+        script_prompt = f"""
+        Viết kịch bản video ngắn 30–45 giây cho chủ đề:
+        {topic}
 
-            # 2️⃣ Prompt ảnh đơn giản (có thể nâng cấp sau)
-            image_prompt = f"""
-            A realistic, warm illustration of a baby 1-3 months old,
-            Vietnamese family style, soft light, clean home,
-            vertical 9:16, high quality
-            """
+        Phong cách:
+        - Dễ hiểu
+        - Dành cho cha mẹ có con nhỏ
+        - Thân thiện, tích cực
+        """
 
-            image = client.images.generate(
-                model="gpt-image-1",
-                prompt=image_prompt,
-                size="1024x1024"
-            )
+        text_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Bạn là chuyên gia chăm sóc mẹ và bé."
+                },
+                {
+                    "role": "user",
+                    "content": script_prompt
+                }
+            ]
+        )
 
-            st.subheader("🖼️ ẢNH MINH HỌA")
-            st.image(image.data[0].url)
+        script_text = text_response.choices[0].message.content
 
-        st.success("✅ Hoàn thành")
-else:
-    st.info("👉 Vui lòng nhập OpenAI API Key để bắt đầu")
+        st.subheader("📜 KỊCH BẢN VIDEO")
+        st.markdown(script_text)
+
+        # ---------- 2. TẠO ẢNH ----------
+        image_prompt = (
+            "A warm, realistic photo of a 1-3 month old baby sleeping peacefully, "
+            "Vietnamese family, soft natural light, clean home, "
+            "vertical portrait, high quality"
+        )
+
+        image_response = client.images.generate(
+            model="gpt-image-1",
+            prompt=image_prompt,
+            size="1024x1024"
+        )
+
+        st.subheader("🖼️ ẢNH MINH HỌA")
+        st.image(image_response.data[0].url, use_container_width=True)
+
+    st.success("✅ Hoàn thành! Bạn có thể dùng nội dung này để làm video.")
