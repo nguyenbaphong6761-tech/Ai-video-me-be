@@ -27,7 +27,7 @@ if api_key:
             """
 
             script_res = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "Bạn là chuyên gia nội dung mẹ và bé."},
                     {"role": "user", "content": script_prompt}
