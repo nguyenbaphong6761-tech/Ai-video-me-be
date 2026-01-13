@@ -1,12 +1,10 @@
 import streamlit as st
 from openai import OpenAI
 
-st.set_page_config(page_title="AI Mẹ & Bé", layout="centered")
-st.title("🤱 AI tạo kịch bản mẹ & bé")
+st.set_page_config(page_title="AI Video Mẹ & Bé", layout="centered")
+st.title("🤱 AI xây kênh Video Mẹ & Bé")
 
-st.write("👉 Nhập API key và bấm nút để test")
-
-api_key = st.text_input("OpenAI API Key", type="password")
+api_key = st.text_input("🔑 OpenAI API Key", type="password")
 
 if not api_key:
     st.stop()
@@ -14,19 +12,37 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 topic = st.text_input(
-    "Chủ đề video",
-    "Chăm sóc bé 1–3 tháng tuổi"
+    "📌 Chủ đề video",
+    "Bé 1–3 tháng tuổi ngủ hay giật mình ban đêm"
 )
 
-if st.button("TẠO KỊCH BẢN"):
+if st.button("🚀 Tạo kịch bản + prompt video"):
+
     with st.spinner("AI đang tạo nội dung..."):
+
+        prompt = f"""
+        Hãy tạo nội dung cho video TikTok/Reels về chủ đề: {topic}
+
+        Trả về theo cấu trúc sau:
+
+        1. HOOK 3 GIÂY ĐẦU (1 câu ngắn, đánh vào nỗi lo cha mẹ)
+        2. KỊCH BẢN 30–45 GIÂY (chia từng câu ngắn)
+        3. CHECKLIST / TIP NGẮN (3 ý)
+        4. CTA NHẸ (không bán hàng)
+        5. PROMPT TẠO ẢNH (cho Leonardo / Bing Image)
+        6. PROMPT DỰNG VIDEO (cho CapCut / Pika, mô tả cảnh)
+
+        Ngôn ngữ: tiếng Việt, dễ hiểu, thân thiện.
+        """
+
         res = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Bạn là chuyên gia chăm sóc mẹ và bé."},
-                {"role": "user", "content": f"Viết kịch bản video 30 giây về: {topic}"}
+                {"role": "system", "content": "Bạn là chuyên gia nội dung mẹ & bé và marketing video ngắn."},
+                {"role": "user", "content": prompt}
             ]
         )
 
-        st.success("Hoàn thành")
-        st.write(res.choices[0].message.content)
+        st.success("✅ Hoàn thành")
+
+        st.markdown(res.choices[0].message.content)
