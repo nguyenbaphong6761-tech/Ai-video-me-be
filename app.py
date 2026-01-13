@@ -1,121 +1,59 @@
 import streamlit as st
 from openai import OpenAI
 
-# =============================
-# CẤU HÌNH TRANG
-# =============================
-st.set_page_config(
-    page_title="AI Tool Xây Kênh Mẹ & Bé",
-    page_icon="👶",
-    layout="centered"
-)
+st.set_page_config(page_title="AI Video Mẹ & Bé", layout="centered")
+st.title("🤱 AI Tạo Kịch Bản + Ảnh Video Mẹ & Bé")
 
-st.title("👶 AI TOOL TẠO KỊCH BẢN & PROMPT VIDEO MẸ & BÉ")
-st.write("Dành cho xây kênh nội dung dài hạn (TikTok / Reels / Shorts)")
+api_key = st.text_input("🔑 Nhập OpenAI API Key", type="password")
 
-# =============================
-# NHẬP API KEY
-# =============================
-api_key = st.text_input(
-    "🔑 Nhập OpenAI API Key",
-    type="password",
-    help="Lấy tại https://platform.openai.com"
-)
+if api_key:
+    client = OpenAI(api_key=api_key)
 
-if not api_key:
-    st.warning("Vui lòng nhập API Key để tiếp tục")
-    st.stop()
-
-client = OpenAI(api_key=api_key)
-
-# =============================
-# INPUT NGƯỜI DÙNG
-# =============================
-age_range = st.selectbox(
-    "👶 Độ tuổi của bé",
-    [
-        "1–3 tháng",
-        "3–6 tháng",
-        "6–12 tháng"
-    ]
-)
-
-content_type = st.selectbox(
-    "🎯 Mục tiêu nội dung",
-    [
-        "Xây kênh dài hạn",
-        "Chia sẻ kiến thức",
-        "Video trải nghiệm thực tế",
-        "Video review sản phẩm"
-    ]
-)
-
-tone = st.selectbox(
-    "🎨 Giọng điệu",
-    [
-        "Nhẹ nhàng – ấm áp",
-        "Chuyên gia – đáng tin cậy",
-        "Gần gũi – đời thường"
-    ]
-)
-
-brand = st.text_input(
-    "🏷️ Thương hiệu (không bắt buộc)",
-    placeholder="Ví dụ: Fatzbaby, Pigeon, Chicco..."
-)
-
-# =============================
-# TẠO PROMPT AI
-# =============================
-def build_prompt():
-    brand_text = f"Lồng ghép thương hiệu {brand} một cách tự nhiên." if brand else ""
-
-    return f"""
-Bạn là chuyên gia nội dung ngành mẹ & bé tại Việt Nam.
-
-Hãy tạo:
-1. KỊCH BẢN VIDEO (30–45 giây, chia cảnh rõ ràng)
-2. PROMPT TẠO VIDEO AI (dán vào CapCut / Vivideo / HeyGen)
-
-Thông tin:
-- Độ tuổi bé: {age_range}
-- Mục tiêu nội dung: {content_type}
-- Giọng điệu: {tone}
-{brand_text}
-
-Yêu cầu:
-- An toàn cho trẻ sơ sinh
-- Ngôn từ tích cực, không gây lo lắng
-- Phù hợp xây kênh lâu dài
-- Có thể dùng cho TikTok / Reels / Shorts
-
-Trình bày đúng cấu trúc:
-=== KỊCH BẢN VIDEO ===
-=== PROMPT VIDEO AI ===
-"""
-
-# =============================
-# NÚT TẠO NỘI DUNG
-# =============================
-if st.button("🚀 TẠO KỊCH BẢN & PROMPT"):
-    with st.spinner("AI đang tạo nội dung..."):
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Bạn là chuyên gia marketing và nội dung mẹ & bé."},
-                {"role": "user", "content": build_prompt()}
-            ],
-            temperature=0.7
-        )
-
-        result = response.choices[0].message.content
-
-    st.success("✅ Hoàn thành!")
-    st.markdown(result)
-
-    st.download_button(
-        label="📥 Tải nội dung (.txt)",
-        data=result,
-        file_name="kich_ban_va_prompt_video_me_va_be.txt",
-        mime="text/plain"
+    topic = st.text_area(
+        "📌 Nhập chủ đề video",
+        "Chăm sóc bé 1–3 tháng tuổi ngủ ngon ban đêm"
     )
+
+    if st.button("🚀 Tạo kịch bản & hình ảnh"):
+        with st.spinner("AI đang xử lý..."):
+
+            # 1️⃣ Tạo kịch bản + prompt ảnh
+            script_prompt = f"""
+            Viết:
+            1. Kịch bản video ngắn 30–45s cho chủ đề: {topic}
+            2. Prompt tạo ảnh minh họa cho video (phong cách dễ thương, thực tế)
+
+            Trình bày rõ ràng.
+            """
+
+            script_res = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "Bạn là chuyên gia nội dung mẹ và bé."},
+                    {"role": "user", "content": script_prompt}
+                ]
+            )
+
+            result_text = script_res.choices[0].message.content
+            st.subheader("📜 KỊCH BẢN & PROMPT")
+            st.markdown(result_text)
+
+            # 2️⃣ Prompt ảnh đơn giản (có thể nâng cấp sau)
+            image_prompt = f"""
+            A realistic, warm illustration of a baby 1-3 months old,
+            Vietnamese family style, soft light, clean home,
+            vertical 9:16, high quality
+            """
+
+            image = client.images.generate(
+                model="gpt-image-1",
+                prompt=image_prompt,
+                size="1024x1024"
+            )
+
+            st.subheader("🖼️ ẢNH MINH HỌA")
+            st.image(image.data[0].url)
+
+        st.success("✅ Hoàn thành")
+else:
+    st.info("👉 Vui lòng nhập OpenAI API Key để bắt đầu")
